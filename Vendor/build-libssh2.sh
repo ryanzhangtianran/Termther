@@ -64,9 +64,6 @@ module CSSH2 {
 MM
 
 echo "--- packaging xcframework"
-rm -rf libssh2.xcframework
-xcodebuild -create-xcframework \
-    -library "$WORK/libssh2-combined.a" -headers "$WORK/Headers" \
-    -output libssh2.xcframework >/dev/null
+./make-xcframework.sh libssh2.xcframework "$WORK/libssh2-combined.a" "$WORK/Headers"
 
 echo "built Vendor/libssh2.xcframework ($(du -sh libssh2.xcframework | cut -f1))"

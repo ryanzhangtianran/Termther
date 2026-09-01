@@ -2,6 +2,10 @@
 
 ## Build and test
 
+The Command Line Tools are enough; full Xcode is not needed. If you find
+yourself reaching for `xcodebuild`, look at `Vendor/make-xcframework.sh` first
+-- that dependency was removed on purpose and is easy to reintroduce.
+
 ```sh
 swift build
 swift test                   # everything that does not need a network

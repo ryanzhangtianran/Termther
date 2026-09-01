@@ -33,9 +33,6 @@ module CECShim {
 MM
 
 echo "--- packaging xcframework"
-rm -rf ecshim.xcframework
-xcodebuild -create-xcframework \
-    -library "$WORK/libecshim.a" -headers "$WORK/Headers" \
-    -output ecshim.xcframework >/dev/null
+./make-xcframework.sh ecshim.xcframework "$WORK/libecshim.a" "$WORK/Headers"
 
 echo "built Vendor/ecshim.xcframework ($(du -sh ecshim.xcframework | cut -f1))"

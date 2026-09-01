@@ -12,9 +12,13 @@ Vendor/build-libssh2.sh      # once: the three vendored binaries
 Vendor/build-ghostty-vt.sh
 Vendor/build-ecshim.sh
 
-swift test                   # 211 tests
+swift test                   # 215 tests
 ./Scripts/build-app.sh       # build/Termther.app
 ```
+
+Needs the Command Line Tools, plus Go and Zig for two of the vendored builds.
+Not Xcode: `Vendor/make-xcframework.sh` writes the framework layout itself, and
+the Metal shaders are compiled at startup rather than by `metal`.
 
 ## Layout
 
