@@ -1,0 +1,26 @@
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved.bak
+
+# What Scripts/build-app.sh assembles.
+build/
+
+# Vendored binaries: built by Vendor/build-*.sh from sources that are checked
+# in or pinned. Reproducible, and far too big to keep in the history.
+Vendor/*.xcframework/
+Vendor/openssl/
+Vendor/libssh2-src/
+Vendor/ghostty-src/
+
+# Go build cache for the EasyConnect shim, and the shim binary itself.
+Vendor/ecshim/*.a
+Vendor/ecshim/*.h
+Vendor/ecshim/ecshim
+
+
+.DS_Store
+*.swp
+
+# Local Claude Code settings, not shared.
+.claude/settings.local.json

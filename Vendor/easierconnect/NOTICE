@@ -1,0 +1,29 @@
+This directory contains a modified copy of zju-connect
+(https://github.com/mythologyli/zju-connect), which implements the Sangfor
+EasyConnect protocol first worked out by EasierConnect
+(https://github.com/lyc8503/EasierConnect).
+
+Licensed under the GNU Affero General Public License, version 3. The full text
+is in LICENSE. Termther is released under the same licence because it links
+this code.
+
+Modified by the Termther project:
+
+  * The Go module path was changed from github.com/mythologyli/zju-connect to
+    termther/easyconnect, and the directory renamed, so the fork does not
+    claim to be the upstream module.
+
+  * stack/gvisor/stack.go no longer ends the host process when a tunnel
+    breaks. Upstream panics on a read or write failure and calls os.Exit(2) on
+    a server-initiated shutdown, which is reasonable for a command-line
+    program and fatal inside an application: changing networks was enough to
+    make the whole app disappear, silently in the os.Exit case. It reports
+    through gvisor.OnFatal instead, and drops packets once teardown has begun.
+    Every change is marked TERMTHER PATCH.
+
+  * The command-line entry point, TUN-mode stack, aTrust client, forwarding
+    services, container files, CI and documentation were removed. Termther
+    uses the EasyConnect client and the gvisor stack, and nothing else.
+
+Nothing else was altered, and every third-party copyright notice inside the
+remaining files was carried over untouched.
