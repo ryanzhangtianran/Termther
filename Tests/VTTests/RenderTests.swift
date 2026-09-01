@@ -266,3 +266,39 @@ func powerlineSeam() throws {
     let message = "seam mismatch: background covers \(background.count) rows, separator covers \(separator.count)"
     #expect(separator == background, "\(message)")
 }
+
+/// A screen with something in every cell.
+///
+/// This is the test that was missing. Every other one draws a handful of
+/// glyphs, and a handful fits inside the 4 KB that `setVertexBytes` allows --
+/// so the renderer passed everything while carrying a call that aborts the
+/// process the moment a screen is actually full. It shipped, and it crashed on
+/// the first `ls` of a large directory.
+@Test("a full screen of text draws, whatever the instance count")
+func fullScreenOfText() throws {
+    let cols = 100, rows = 30
+    let canvas = try Canvas(cols: cols, rows: rows)
+
+    // Every cell filled, foreground and background both set, so the frame
+    // carries three instances per cell across the three passes.
+    let letters = Array("abcdefghijklmnopqrstuvwxyz")
+    let cells = (0..<rows).map { row in
+        (0..<cols).map { column in
+            cell(String(letters[(row + column) % letters.count]),
+                 fg: Color(red: 220, green: 220, blue: 220),
+                 bg: Color(red: 20, green: 30, blue: 40))
+        }
+    }
+
+    let pixels = try canvas.render(frame(cols: UInt16(cols), rows: UInt16(rows), cells: cells))
+
+    // Reaching here at all is most of the point -- the old path aborted inside
+    // the Metal driver rather than returning. The corners confirm it drew the
+    // whole grid and not just the part that fitted.
+    let background = (UInt8(20), UInt8(30), UInt8(40))
+    #expect(canvas.inkCount(pixels, cellX: 0, cellY: 0, background: background) > 0)
+    #expect(canvas.inkCount(pixels, cellX: cols - 1, cellY: rows - 1,
+                            background: background) > 0)
+    #expect(canvas.inkCount(pixels, cellX: cols / 2, cellY: rows / 2,
+                            background: background) > 0)
+}

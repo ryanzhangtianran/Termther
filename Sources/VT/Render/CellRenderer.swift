@@ -60,6 +60,15 @@ public final class CellRenderer {
     public let scale: CGFloat
 
     private let queue: MTLCommandQueue
+
+    /// Instance data goes through a buffer, never `setVertexBytes`.
+    ///
+    /// That call has a hard 4 KB limit and aborts inside the Metal driver when
+    /// it is passed more -- not an error, an `abort()`. A screenful of text is
+    /// thousands of instances and tens of kilobytes, so the only reason this
+    /// ever worked is that most screens are mostly empty. It crashed the first
+    /// time somebody filled one.
+    private var instances: MTLBuffer?
     private let solidPipeline: MTLRenderPipelineState
     private let textPipeline: MTLRenderPipelineState
     private let atlas: GlyphAtlas
@@ -98,9 +107,7 @@ public final class CellRenderer {
         // Compiled at startup rather than shipped as a metallib: SwiftPM copies
         // .metal files without compiling them, and runtime compilation costs a
         // few tens of milliseconds once. An Xcode app target can precompile.
-        guard let url = Bundle.module.url(forResource: "shaders", withExtension: "metal"),
-              let source = try? String(contentsOf: url, encoding: .utf8)
-        else { throw Failure.shaderSource }
+        guard let source = ShaderSource.metal() else { throw Failure.shaderSource }
 
         let library: MTLLibrary
         do { library = try device.makeLibrary(source: source, options: nil) }
@@ -283,26 +290,58 @@ public final class CellRenderer {
             atlasSize: SIMD2(Float(atlas.size), Float(atlas.size)),
             colorAtlasSize: SIMD2(Float(atlas.colorSize), Float(atlas.colorSize)))
 
-        func drawSolids(_ instances: inout [SolidInstance]) {
-            guard !instances.isEmpty else { return }
+        // Three passes, one buffer, three regions.
+        //
+        // Not one region reused: the encoder only records that a draw reads
+        // this buffer, and the GPU reads it once the whole command buffer
+        // runs. Overwriting it between passes leaves every pass drawing the
+        // last one's data -- which showed up as nothing being drawn at all.
+        let cursor = cursorRects()
+        let first = underlays + cursor.under
+        let last = overlays + cursor.over
+
+        let stride = MemoryLayout<SolidInstance>.stride
+        let textStride = MemoryLayout<TextInstance>.stride
+        func aligned(_ value: Int) -> Int { (value + 255) & ~255 }
+
+        let firstAt = 0
+        let glyphsAt = aligned(firstAt + stride * first.count)
+        let lastAt = aligned(glyphsAt + textStride * glyphs.count)
+        let total = aligned(lastAt + stride * last.count)
+
+        // Grown, never shrunk: a terminal settles on a size within a frame or
+        // two, and reallocating every frame costs more than the memory does.
+        if total > 0, instances == nil || instances!.length < total {
+            instances = device.makeBuffer(length: max(total, 256 * 1024),
+                                          options: .storageModeShared)
+        }
+        guard total == 0 || instances != nil else { encoder.endEncoding(); return }
+
+        func copy<T>(_ values: [T], to offset: Int) {
+            guard !values.isEmpty, let buffer = instances else { return }
+            values.withUnsafeBytes { source in
+                buffer.contents().advanced(by: offset)
+                    .copyMemory(from: source.baseAddress!, byteCount: source.count)
+            }
+        }
+        copy(first, to: firstAt)
+        copy(glyphs, to: glyphsAt)
+        copy(last, to: lastAt)
+
+        func drawSolids(_ solids: [SolidInstance], at offset: Int) {
+            guard !solids.isEmpty, let buffer = instances else { return }
             encoder.setRenderPipelineState(solidPipeline)
-            encoder.setVertexBytes(&instances,
-                                   length: MemoryLayout<SolidInstance>.stride * instances.count,
-                                   index: 0)
+            encoder.setVertexBuffer(buffer, offset: offset, index: 0)
             encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
             encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4,
-                                   instanceCount: instances.count)
+                                   instanceCount: solids.count)
         }
 
-        let cursor = cursorRects()
-        var firstPass = underlays + cursor.under
-        drawSolids(&firstPass)
+        drawSolids(first, at: firstAt)
 
-        if !glyphs.isEmpty {
+        if !glyphs.isEmpty, let buffer = instances {
             encoder.setRenderPipelineState(textPipeline)
-            encoder.setVertexBytes(&glyphs,
-                                   length: MemoryLayout<TextInstance>.stride * glyphs.count,
-                                   index: 0)
+            encoder.setVertexBuffer(buffer, offset: glyphsAt, index: 0)
             encoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.stride, index: 1)
             encoder.setFragmentTexture(atlas.texture, index: 0)
             encoder.setFragmentTexture(atlas.colorTexture, index: 1)
@@ -310,8 +349,7 @@ public final class CellRenderer {
                                    instanceCount: glyphs.count)
         }
 
-        var lastPass = overlays + cursor.over
-        drawSolids(&lastPass)
+        drawSolids(last, at: lastAt)
 
         encoder.endEncoding()
         buffer.commit()

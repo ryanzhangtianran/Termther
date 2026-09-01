@@ -83,3 +83,39 @@ func dragSelects() async throws {
     let selected = await terminal.selectedText()
     #expect(selected == "hello", "expected the dragged range, got \(selected ?? "nil")")
 }
+
+/// What may be handed to the encoder as a character.
+///
+/// The rule is one line and has broken the keyboard twice: once when the
+/// platform's text was passed for Return and Backspace, and again when the
+/// arrows' private-use scalars were. Both times every key still produced
+/// *something*, which is why it took a while to notice.
+struct EncoderCodepointTests {
+    @Test("AppKit's function-key scalars are never passed as text")
+    func privateUseIsDropped() {
+        // 0xF702 is what AppKit reports for Left. Sent as a codepoint it makes
+        // the encoder answer for a character nobody typed.
+        for scalar: UInt32 in [0xF700, 0xF702, 0xF703, 0xF729, 0xF8FF] {
+            #expect(KeyMap.codepoint(from: scalar) == 0, "0x\(String(scalar, radix: 16))")
+        }
+    }
+
+    @Test("real characters are passed through")
+    func charactersSurvive() {
+        // Control chords need these: Ctrl+[ is only encodable from the "[".
+        for scalar: UInt32 in [0x61, 0x5B, 0x5C, 0x5D, 0x20, 0x30, 0x4E2D] {
+            #expect(KeyMap.codepoint(from: scalar) == scalar)
+        }
+    }
+
+    @Test("the arrows are special keys, and are known to the map")
+    func arrowsAreMapped() {
+        // 0x7B..0x7E are Left, Right, Down, Up. Missing from either set and
+        // they fall through to the platform's text, which is the private-use
+        // scalar the first test rejects -- so nothing would be sent at all.
+        for keyCode: UInt16 in [0x7B, 0x7C, 0x7D, 0x7E] {
+            #expect(KeyMap.isSpecial(keyCode), "keyCode 0x\(String(keyCode, radix: 16))")
+            #expect(KeyMap.key(for: keyCode) != nil)
+        }
+    }
+}

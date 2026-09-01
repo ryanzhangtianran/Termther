@@ -10,7 +10,9 @@ cd "$(dirname "$0")/.."
 
 CONFIGURATION=${CONFIGURATION:-release}
 APP="build/Termther.app"
-VERSION=$(git describe --tags --always 2>/dev/null || echo "0.1.0")
+# Overridable, so a release is a decision rather than whatever the last tag
+# happened to be: VERSION=0.1.0 ./Scripts/build-app.sh
+VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "0.1.0")}
 
 echo "--- building ($CONFIGURATION)"
 swift build -c "$CONFIGURATION" --product termther
@@ -29,8 +31,32 @@ cp "$BIN/termther" "$APP/Contents/MacOS/Termther"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # The renderer loads shaders.metal from here at startup.
 for bundle in "$BIN"/*.bundle; do
-    [ -e "$bundle" ] && cp -R "$bundle" "$APP/Contents/Resources/"
+    [ -e "$bundle" ] || continue
+    cp -R "$bundle" "$APP/Contents/Resources/"
+
+    # SwiftPM does not write an Info.plist into every resource bundle it
+    # produces, and a .bundle directory without one is not a bundle: Foundation
+    # accepts it on some versions of macOS and refuses it on others. Ours was
+    # accepted here and refused on the machine somebody else ran it on.
+    name=$(basename "$bundle" .bundle)
+    plist="$APP/Contents/Resources/$(basename "$bundle")/Info.plist"
+    [ -f "$plist" ] || cat > "$plist" <<BUNDLEPLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key><string>com.tianranzhang.termther.$name</string>
+    <key>CFBundleName</key><string>$name</string>
+    <key>CFBundlePackageType</key><string>BNDL</string>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+</dict>
+</plist>
+BUNDLEPLIST
 done
+
+# And the shader beside them, so finding it never depends on a bundle being
+# well formed at all.
+cp Sources/VT/Render/shaders.metal "$APP/Contents/Resources/shaders.metal"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

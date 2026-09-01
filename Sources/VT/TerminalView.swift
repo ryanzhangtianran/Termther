@@ -186,7 +186,8 @@ public final class TerminalView: NSView {
         let holdsControl = modifiers.contains(.control)
 
         if let key, isSpecial || holdsControl {
-            let codepoint = event.charactersIgnoringModifiers?.unicodeScalars.first?.value ?? 0
+            let reported = event.charactersIgnoringModifiers?.unicodeScalars.first?.value ?? 0
+            let codepoint = KeyMap.codepoint(from: reported)
             let encoded = await terminal.encode(key: key, modifiers: modifiers,
                                                 unshiftedCodepoint: codepoint)
             if !encoded.isEmpty { return encoded }
@@ -306,6 +307,18 @@ enum KeyMap {
     /// private-use scalars for the arrows -- but those are not what a terminal
     /// wants on the wire.
     static func isSpecial(_ keyCode: UInt16) -> Bool { specials.contains(keyCode) }
+
+    /// The scalar worth handing the encoder, or nothing.
+    ///
+    /// AppKit reports the arrows, Home, End and the function keys as scalars
+    /// in the private-use area from 0xF700 up. They are not text, and the
+    /// encoder handed one takes the modifyOtherKeys path and answers with the
+    /// wrong bytes or none at all -- which is why pressing Left moved nothing.
+    /// Only a real character is worth passing, and only a control chord needs
+    /// one at all.
+    static func codepoint(from reported: UInt32) -> UInt32 {
+        (0xF700...0xF8FF).contains(reported) ? 0 : reported
+    }
 
     private static let specials: Set<UInt16> = [
         0x24, 0x30, 0x33, 0x35, 0x75,               // enter tab backspace esc delete
