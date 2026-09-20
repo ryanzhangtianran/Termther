@@ -15,9 +15,9 @@ APP="build/Termther.app"
 VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "0.1.0")}
 
 echo "--- building ($CONFIGURATION)"
-swift build -c "$CONFIGURATION" --product termther
+./Scripts/swift-local.sh build -c "$CONFIGURATION" --product termther
 
-BIN=$(swift build -c "$CONFIGURATION" --product termther --show-bin-path)
+BIN=$(./Scripts/swift-local.sh build -c "$CONFIGURATION" --product termther --show-bin-path)
 
 echo "--- assembling bundle"
 rm -rf "$APP"
@@ -55,8 +55,9 @@ BUNDLEPLIST
 done
 
 # And the shader beside them, so finding it never depends on a bundle being
-# well formed at all.
-cp Sources/VT/Render/shaders.metal "$APP/Contents/Resources/shaders.metal"
+# well formed at all. The source has a neutral extension so SwiftPM does not
+# try to invoke Xcode's `metal` compiler; the app-facing name remains familiar.
+cp Sources/VT/Render/shaders.metal-source "$APP/Contents/Resources/shaders.metal"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

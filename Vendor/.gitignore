@@ -3,3 +3,6 @@
 *.xcframework/
 # Built once by build-libssh2.sh and cached.
 openssl/
+# Go module and build caches. Kept beside the vendored Go source so building
+# Termther never writes dependencies into ~/go or ~/Library/Caches.
+.go/

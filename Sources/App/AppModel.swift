@@ -373,15 +373,10 @@ public final class AppModel {
         Task { try? await store.setSetting("palette", to: palette.name) }
     }
 
-    func saveFontSettings() {
+    func saveTerminalLayoutSettings() {
         guard let theme else { return }
         onAppearanceChanged?()
         Task {
-            try? await store.setSetting("terminalFont", to: theme.terminalFontFamily)
-            try? await store.setSetting("terminalFontSize", to: String(Int(theme.terminalFontSize)))
-            try? await store.setSetting("uiFont", to: theme.uiFontFamily)
-            try? await store.setSetting("uiFontSize", to: String(Int(theme.uiFontSize)))
-            try? await store.setSetting("terminalFontWeight", to: theme.terminalFontWeight.rawValue)
             try? await store.setSetting("lineHeight", to: String(format: "%.2f", theme.terminalLineHeight))
             try? await store.setSetting("letterSpacing", to: String(format: "%.2f", theme.terminalLetterSpacing))
             try? await store.setSetting("cursorStyle", to: theme.cursorStyle.rawValue)
@@ -394,22 +389,6 @@ public final class AppModel {
         guard let theme else { return }
         if let name = try? await store.setting("palette"), let palette = Palette.named(name) {
             theme.palette = palette
-        }
-        if let font = try? await store.setting("terminalFont") {
-            theme.terminalFontFamily = font
-        }
-        if let size = try? await store.setting("terminalFontSize").flatMap(Double.init) {
-            theme.terminalFontSize = size
-        }
-        if let font = try? await store.setting("uiFont") {
-            theme.uiFontFamily = Theme.resolve([font, "IBM Plex Sans"])
-        }
-        if let size = try? await store.setting("uiFontSize").flatMap(Double.init) {
-            theme.uiFontSize = size
-        }
-        if let name = try? await store.setting("terminalFontWeight"),
-           let weight = FontStack.Weight(rawValue: name) {
-            theme.terminalFontWeight = weight
         }
         if let height = try? await store.setting("lineHeight").flatMap(Double.init) {
             theme.terminalLineHeight = height

@@ -12,13 +12,17 @@ Vendor/build-libssh2.sh      # once: the three vendored binaries
 Vendor/build-ghostty-vt.sh
 Vendor/build-ecshim.sh
 
-swift test                   # 215 tests
+./Scripts/swift-local.sh test # 215 tests
 ./Scripts/build-app.sh       # build/Termther.app
 ```
 
 Needs the Command Line Tools, plus Go and Zig for two of the vendored builds.
 Not Xcode: `Vendor/make-xcframework.sh` writes the framework layout itself, and
 the Metal shaders are compiled at startup rather than by `metal`.
+`Scripts/swift-local.sh` always uses the developer directory selected by
+`xcode-select` and keeps compiler caches inside `.build`. CLT 27 currently
+omits the SwiftUI macro plugin required by its macOS 27 SDK, so the script uses
+the compatible macOS 26 SDK from the same installation when necessary.
 
 ## Layout
 

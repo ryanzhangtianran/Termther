@@ -272,6 +272,7 @@ final class VPNController {
         var mutable = address
         guard inet_ntop(AF_INET, &mutable, &buffer, socklen_t(INET_ADDRSTRLEN)) != nil
         else { return nil }
-        return String(cString: buffer)
+        let end = buffer.firstIndex(of: 0) ?? buffer.endIndex
+        return String(decoding: buffer[..<end].map(UInt8.init(bitPattern:)), as: UTF8.self)
     }
 }

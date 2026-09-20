@@ -20,21 +20,12 @@ struct SidePanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
             switch activity {
             case .servers:  ServerList(model: model, search: search, open: open)
             case .proxy:    ProxyPanel(model: model)
             case .vpn:      VPNPanel(model: model)
             }
         }
-    }
-
-    private var header: some View {
-        Text(activity.title.uppercased())
-            .font(theme.ui(10, weight: .semibold))
-            .foregroundStyle(theme.secondaryText)
-            .frame(height: 26, alignment: .center)
-            .padding(.horizontal, Self.inset)
     }
 }
 

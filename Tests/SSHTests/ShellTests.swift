@@ -103,7 +103,7 @@ func localPortForward() async throws {
                                   bindPort: 0,
                                   targetHost: "127.0.0.1", targetPort: 22)
     try await forward.start()
-    let port = await forward.bindPort
+    let port = forward.bindPort
     #expect(port != 0, "port 0 should have been resolved to the one actually bound")
 
     let fd = try await DirectTransport().connect(host: "127.0.0.1", port: port)
@@ -138,7 +138,7 @@ func dynamicPortForward() async throws {
     // where it wants to go.
     let forward = try PortForward(session: session, direction: .dynamic, bindPort: 0)
     try await forward.start()
-    let port = await forward.bindPort
+    let port = forward.bindPort
 
     // Reach the SSH server through it -- the transport built for talking to a
     // proxy, pointed at our own.

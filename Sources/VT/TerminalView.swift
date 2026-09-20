@@ -172,9 +172,9 @@ public final class TerminalView: NSView {
     ///      authoritative: it has already applied Shift, the keyboard layout
     ///      and whatever an input method composed.
     ///
-    /// The encoder must never be given the platform's text. Doing so makes it
-    /// take the modifyOtherKeys path, which turns Return into "0", Backspace
-    /// into nothing, and the letter "a" into "P".
+    /// Named and control keys are described by key, modifiers and the
+    /// unshifted codepoint. Keeping platform text out of that path avoids
+    /// making its precedence part of this view's contract.
     func encode(_ event: NSEvent) async -> [UInt8] {
         var modifiers: KeyModifiers = []
         if event.modifierFlags.contains(.shift) { modifiers.insert(.shift) }

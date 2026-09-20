@@ -17,10 +17,10 @@ command -v go >/dev/null || { echo "go not found (brew install go)"; exit 1; }
 DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-14.0}
 
 echo "--- go build -buildmode=c-archive (macOS $DEPLOYMENT_TARGET)"
-( cd ecshim && MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" \
+( MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" \
     CGO_CFLAGS="-mmacosx-version-min=$DEPLOYMENT_TARGET" \
     CGO_LDFLAGS="-mmacosx-version-min=$DEPLOYMENT_TARGET" \
-    go build -buildmode=c-archive -o "$WORK/libecshim.a" . )
+    ./go-local.sh ecshim build -buildmode=c-archive -o "$WORK/libecshim.a" . )
 
 echo "--- headers + modulemap"
 mkdir -p "$WORK/Headers"
@@ -34,5 +34,6 @@ MM
 
 echo "--- packaging xcframework"
 ./make-xcframework.sh ecshim.xcframework "$WORK/libecshim.a" "$WORK/Headers"
+./namespace-xcframework-headers.sh ecshim.xcframework CECShim
 
 echo "built Vendor/ecshim.xcframework ($(du -sh ecshim.xcframework | cut -f1))"

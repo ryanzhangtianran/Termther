@@ -1,6 +1,6 @@
 import Foundation
 
-/// Finding `shaders.metal`, wherever this happens to be running from.
+/// Finding the Metal shader source, wherever this happens to be running from.
 ///
 /// Not `Bundle.module`. That accessor traps when it cannot find its bundle, so
 /// a resource that fails to travel with the app is not an error path but a
@@ -23,25 +23,36 @@ enum ShaderSource {
     /// Every layout this file is known to arrive in, most likely first.
     private static func candidates() -> [URL] {
         var urls: [URL] = []
-        let name = "shaders.metal"
+        let names = ["shaders.metal-source", "shaders.metal"]
+
+        func appendBundleLayouts(at root: URL) {
+            for name in names {
+                urls.append(root.appending(path: name))
+                urls.append(root.appending(path: "Contents/Resources").appending(path: name))
+            }
+        }
 
         // In an app bundle: beside the other resources, and inside the
         // SwiftPM-shaped bundle the build script copies there.
         if let resources = Bundle.main.resourceURL {
-            urls.append(resources.appending(path: name))
-            urls.append(resources.appending(path: "Termther_VT.bundle").appending(path: name))
+            for name in names {
+                urls.append(resources.appending(path: name))
+            }
+            appendBundleLayouts(at: resources.appending(path: "Termther_VT.bundle"))
         }
 
         // Running from the build directory, which is what tests do: the
         // resource bundle sits beside the binary.
         let beside = Bundle(for: Marker.self).bundleURL.deletingLastPathComponent()
-        urls.append(beside.appending(path: "Termther_VT.bundle").appending(path: name))
-        urls.append(beside.appending(path: name))
+        appendBundleLayouts(at: beside.appending(path: "Termther_VT.bundle"))
+        appendBundleLayouts(at: beside)
 
         // A framework or test bundle carrying it directly.
         if let own = Bundle(for: Marker.self).resourceURL {
-            urls.append(own.appending(path: name))
-            urls.append(own.appending(path: "Termther_VT.bundle").appending(path: name))
+            for name in names {
+                urls.append(own.appending(path: name))
+            }
+            appendBundleLayouts(at: own.appending(path: "Termther_VT.bundle"))
         }
         return urls
     }

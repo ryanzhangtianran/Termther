@@ -11,14 +11,31 @@ self-contained and rebuilds its `.xcframework` from source.
 
 ```sh
 ./build-libssh2.sh && ./build-ghostty-vt.sh && ./build-ecshim.sh
-swift test          # every engine is called for real, not just linked
+../Scripts/swift-local.sh test # every engine is called for real, not just linked
 ```
 
 Needs `zig >= 0.16.0` and `go` (`brew install zig go`).
 
+Go commands should go through `go-local.sh`, which keeps both the module cache
+and the build cache under `Vendor/.go/` instead of writing to `~/go/pkg/mod`
+and `~/Library/Caches/go-build`:
+
+```sh
+./go-local.sh ecshim mod download
+./go-local.sh easierconnect test ./...
+```
+
+`build-ecshim.sh` already uses this wrapper. `Vendor/.go/` is a disposable,
+ignored cache; `go.mod` and `go.sum` remain beside each module's source.
+
 None of them needs a hand-written module map target: Ghostty ships one inside
 its xcframework (`import GhosttyVt`), and the other two scripts generate one
 (`CSSH2`, `CECShim`).
+
+Each build finishes by putting its headers below a module-specific directory
+inside the XCFramework while leaving `HeadersPath` at the common `Headers`
+root. SwiftPM 6.4 copies binary-target headers into one include tree, so three
+plain `Headers/module.modulemap` paths otherwise collide.
 
 ## Known gaps before shipping
 

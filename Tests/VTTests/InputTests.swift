@@ -15,12 +15,12 @@ func essentialKeys() async throws {
     #expect(await terminal.encode(key: GHOSTTY_KEY_ESCAPE) == [0x1b])
 }
 
-@Test("passing text alongside a named key is what broke them")
-func textPoisonsNamedKeys() async throws {
-    // Kept as a guard: if this ever stops differing, the view can stop caring.
+@Test("named keys remain correct when the event also carries text")
+func textDoesNotPoisonNamedKeys() async throws {
+    // Current Ghostty releases correctly prioritize the named key. Keep this
+    // pinned because older releases took the modifyOtherKeys path instead.
     let terminal = try Terminal()
-    let poisoned = await terminal.encode(key: GHOSTTY_KEY_ENTER, text: "\r")
-    #expect(poisoned != [0x0d], "if this now matches, the view's special case is obsolete")
+    #expect(await terminal.encode(key: GHOSTTY_KEY_ENTER, text: "\r") == [0x0d])
 }
 
 @Test("the virtual key codes a terminal needs are all mapped")

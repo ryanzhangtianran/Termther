@@ -252,11 +252,13 @@ public final class CellRenderer {
         case .block:
             under.append(rect(0, 0, cellWidth, cellHeight))
         case .bar:
-            // Thin and full height, the way a text caret looks everywhere
-            // else. Anything thicker starts reading as a highlight.
-            over.append(rect(0, 0, max(2, Float((2 * scale).rounded())), cellHeight))
+            // Keep the caret inside the cell's vertical rhythm. A full-height
+            // bar is visually oversized next to the terminal's glyphs.
+            let height = (cellHeight * 0.72).rounded()
+            over.append(rect(0, (cellHeight - height) * 0.5,
+                             max(2, Float((2 * scale).rounded())), height))
         case .underline:
-            over.append(rect(0, cellHeight - thickness * 2, cellWidth, thickness * 2))
+            over.append(rect(0, cellHeight - thickness, cellWidth, thickness))
         case .hollowBlock:
             // Four edges: an unfocused terminal, which should be visible but
             // must not obscure the character.

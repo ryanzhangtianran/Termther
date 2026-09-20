@@ -30,22 +30,7 @@ struct SettingsTab: View {
                     }
                 }
 
-                section("Terminal font") {
-                    FontPicker(family: $theme.terminalFontFamily,
-                               size: $theme.terminalFontSize,
-                               families: Theme.monospacedFamilies)
-                    Picker("Weight", selection: $theme.terminalFontWeight) {
-                        ForEach(FontStack.Weight.allCases, id: \.self) { weight in
-                            Text(weight.title).tag(weight)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    Text("Bold text is two steps heavier than this, so a light base gives a "
-                         + "thinner terminal throughout.")
-                        .font(theme.ui(11))
-                        .foregroundStyle(theme.secondaryText)
-
+                section("Terminal") {
                     Multiplier(title: "Line height", value: $theme.terminalLineHeight,
                                range: 0.9...1.8)
                     Multiplier(title: "Letter spacing", value: $theme.terminalLetterSpacing,
@@ -61,32 +46,10 @@ struct SettingsTab: View {
                          + "switching shape in insert mode, for instance.")
                         .font(theme.ui(11))
                         .foregroundStyle(theme.secondaryText)
-                    Text("Changes apply to terminals opened from now on.")
-                        .font(theme.ui(11))
-                        .foregroundStyle(theme.secondaryText)
                 }
-                .onChange(of: theme.terminalFontFamily) { model.saveFontSettings() }
-                .onChange(of: theme.terminalFontSize) { model.saveFontSettings() }
-                .onChange(of: theme.terminalFontWeight) { model.saveFontSettings() }
-                .onChange(of: theme.terminalLineHeight) { model.saveFontSettings() }
-                .onChange(of: theme.terminalLetterSpacing) { model.saveFontSettings() }
-                .onChange(of: theme.cursorStyle) { model.saveFontSettings() }
-
-                section("Interface font") {
-                    FontPicker(family: $theme.uiFontFamily,
-                               size: $theme.uiFontSize,
-                               families: Theme.uiFamilies)
-                    Picker("Weight", selection: $theme.uiFontWeight) {
-                        Text("Light").tag(Font.Weight.light)
-                        Text("Regular").tag(Font.Weight.regular)
-                        Text("Medium").tag(Font.Weight.medium)
-                        Text("Semibold").tag(Font.Weight.semibold)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-                .onChange(of: theme.uiFontFamily) { model.saveFontSettings() }
-                .onChange(of: theme.uiFontSize) { model.saveFontSettings() }
+                .onChange(of: theme.terminalLineHeight) { model.saveTerminalLayoutSettings() }
+                .onChange(of: theme.terminalLetterSpacing) { model.saveTerminalLayoutSettings() }
+                .onChange(of: theme.cursorStyle) { model.saveTerminalLayoutSettings() }
 
                 section("Credentials") {
                     LabeledContent("Unused keys") {
@@ -246,33 +209,6 @@ private struct Multiplier: View {
                     .monospacedDigit()
                     .frame(width: 46, alignment: .trailing)
             }
-        }
-    }
-}
-
-private struct FontPicker: View {
-    @Environment(Theme.self) private var theme
-    @Binding var family: String
-    @Binding var size: CGFloat
-    let families: [String]
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Picker("", selection: $family) {
-                ForEach(families, id: \.self) { name in
-                    // Each name in its own face, so the list is a preview.
-                    Text(name).font(.custom(name, size: 12)).tag(name)
-                }
-            }
-            .labelsHidden()
-            .frame(maxWidth: 260)
-
-            Stepper(value: $size, in: 9...24, step: 1) {
-                Text("\(Int(size)) pt")
-                    .font(theme.ui(12))
-                    .monospacedDigit()
-            }
-            .fixedSize()
         }
     }
 }

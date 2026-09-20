@@ -13,7 +13,7 @@ func forwardLifecycle() async throws {
     for _ in 0..<40 {
         let forward = try PortForward(session: session, direction: .local,
                                       bindPort: 0, targetHost: "127.0.0.1", targetPort: 9)
-        let port = await forward.bindPort
+        let port = forward.bindPort
         #expect(port != 0)
         try await forward.start()
         await forward.stop()
@@ -25,7 +25,7 @@ func forwardNeverStarted() async throws {
     let session = SSHSession()
     let forward = try PortForward(session: session, direction: .local,
                                   bindPort: 0, targetHost: "127.0.0.1", targetPort: 9)
-    let port = await forward.bindPort
+    let port = forward.bindPort
     await forward.stop()
 
     // The port must be free again straight away, or stop() leaked the socket.
@@ -41,7 +41,7 @@ func forwardAcceptsAndDrops() async throws {
     let forward = try PortForward(session: session, direction: .local,
                                   bindPort: 0, targetHost: "127.0.0.1", targetPort: 9)
     try await forward.start()
-    let port = await forward.bindPort
+    let port = forward.bindPort
 
     // The forward accepts, fails to open a channel, and closes the client.
     // Doing that wrong is a use-after-close rather than a wrong answer.

@@ -20,5 +20,6 @@ echo "--- zig build -Demit-lib-vt=true"
 
 rm -rf ghostty-vt.xcframework
 cp -R "$WORK/ghostty/zig-out/lib/ghostty-vt.xcframework" .
+./namespace-xcframework-headers.sh ghostty-vt.xcframework GhosttyVt
 
 echo "built Vendor/ghostty-vt.xcframework ($(du -sh ghostty-vt.xcframework | cut -f1))"

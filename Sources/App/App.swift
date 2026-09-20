@@ -54,10 +54,14 @@ public final class TermtherApp: NSObject, NSApplicationDelegate, WorkspaceComman
             styleMask: [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView],
             backing: .buffered, defer: false)
         window.title = "Termther"
+        // Let the content extend beneath the native traffic lights. The
+        // SwiftUI root supplies an AppKit titlebar material for that area.
         window.titlebarAppearsTransparent = true
         // The title would otherwise draw on top of the cards; the traffic
         // lights stay, and the strip they sit in stays draggable.
         window.titleVisibility = .hidden
+        window.isOpaque = true
+        window.backgroundColor = theme.windowBackground.nsColor
         window.appearance = theme.appearance
         let hosting = NSHostingView(
             rootView: WorkspaceView(workspace: workspace, model: model)

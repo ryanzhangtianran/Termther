@@ -12,15 +12,12 @@ import VT
 @Observable
 public final class Theme {
     public var palette: Palette
-    public var uiFontFamily: String
-    public var uiFontSize: CGFloat
     public var terminalFontFamily: String
     public var terminalFontSize: CGFloat
     public var terminalFontWeight: FontStack.Weight
     public var terminalLineHeight: CGFloat
     public var terminalLetterSpacing: CGFloat
     public var cursorStyle: CursorStyle
-    public var uiFontWeight: Font.Weight = .regular
 
     /// Where the window's own buttons start, so the cards can line up with
     /// them. Measured from the window rather than assumed, since the number is
@@ -28,7 +25,6 @@ public final class Theme {
     public var windowButtonInset: CGFloat = 7
 
     public init(palette: Palette = .kanagawaWave,
-                uiFontFamily: String = "IBM Plex Sans", uiFontSize: CGFloat = 13,
                 terminalFontFamily: String = "Maple Mono Normal NL NF",
                 terminalFontSize: CGFloat = 13,
                 terminalFontWeight: FontStack.Weight = .regular,
@@ -36,8 +32,6 @@ public final class Theme {
                 terminalLetterSpacing: CGFloat = 1.0,
                 cursorStyle: CursorStyle = .bar) {
         self.palette = palette
-        self.uiFontFamily = Self.resolve([uiFontFamily, "IBM Plex Sans", "SF Pro Text"])
-        self.uiFontSize = uiFontSize
         self.terminalFontFamily = terminalFontFamily
         self.terminalFontSize = terminalFontSize
         self.terminalFontWeight = terminalFontWeight
@@ -101,31 +95,9 @@ public final class Theme {
     }
 
     public func ui(_ size: CGFloat? = nil, weight: Font.Weight? = nil) -> Font {
-        .custom(uiFontFamily, size: size ?? uiFontSize).weight(weight ?? uiFontWeight)
+        .system(size: size ?? 13, weight: weight ?? .regular)
     }
 
-    /// The families a picker should offer: monospaced ones for the terminal,
-    /// everything for the interface.
-    public static var monospacedFamilies: [String] {
-        NSFontManager.shared.availableFontFamilies.filter { family in
-            guard let font = NSFont(name: family, size: 12) else { return false }
-            return font.isFixedPitch
-        }.sorted()
-    }
-
-    public static var uiFamilies: [String] {
-        NSFontManager.shared.availableFontFamilies.sorted()
-    }
-
-    /// The first family that actually exists.
-    ///
-    /// AppKit substitutes silently for an unknown name, so asking for a font
-    /// that is not installed gives you something proportional and wrong rather
-    /// than an error.
-    static func resolve(_ candidates: [String]) -> String {
-        let installed = Set(NSFontManager.shared.availableFontFamilies)
-        return candidates.first { installed.contains($0) } ?? candidates.last!
-    }
 }
 
 extension VT.Color {
@@ -148,14 +120,20 @@ extension VT.Color {
     }
 }
 
+private extension SwiftUI.Color {
+    var nsColor: NSColor {
+        NSColor(self)
+    }
+}
+
 extension View {
-    /// Applies the theme's typeface and accent to everything below.
+    /// Applies the system type scale and accent to everything below.
     ///
     /// SwiftUI has no global font setting the way Flutter's `fontFamily` is;
     /// the environment default is the closest equivalent, and Text and most
     /// controls inherit from it.
     func themed(_ theme: Theme) -> some View {
-        environment(\.font, theme.ui())
+        environment(\.font, .body)
             .tint(theme.accent)
             .foregroundStyle(theme.text)
     }

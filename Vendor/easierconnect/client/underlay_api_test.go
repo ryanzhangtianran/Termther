@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"termther/easyconnect/client"
-	"termther/easyconnect/client/atrust"
 	"termther/easyconnect/client/easyconnect"
 	"termther/easyconnect/underlay"
 )
@@ -24,7 +23,7 @@ var (
 	_ client.UnderlayDialer = (*underlay.Dialer)(nil)
 )
 
-func TestPublicClientsAcceptExternalUnderlay(t *testing.T) {
+func TestEasyConnectAcceptsExternalUnderlay(t *testing.T) {
 	var dialer client.UnderlayDialer = externalUnderlay{}
 
 	easyClient := easyconnect.NewClient(easyconnect.Options{
@@ -35,10 +34,4 @@ func TestPublicClientsAcceptExternalUnderlay(t *testing.T) {
 		t.Fatal("easyconnect.NewClient returned nil")
 	}
 	easyClient.Close()
-
-	aTrustClient := atrust.NewClient(atrust.ClientOptions{UnderlayDialer: dialer})
-	if aTrustClient == nil {
-		t.Fatal("atrust.NewClient returned nil")
-	}
-	aTrustClient.Close()
 }

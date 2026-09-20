@@ -7,17 +7,23 @@ yourself reaching for `xcodebuild`, look at `Vendor/make-xcframework.sh` first
 -- that dependency was removed on purpose and is easy to reintroduce.
 
 ```sh
-swift build
-swift test                   # everything that does not need a network
+./Scripts/swift-local.sh build
+./Scripts/swift-local.sh test # everything that does not need a network
 ./Scripts/build-app.sh       # build/Termther.app
 ```
+
+`swift-local.sh` uses the developer directory selected by `xcode-select` and
+keeps compiler module caches under `.build/toolchain-cache`. This avoids stale
+modules from another Command Line Tools release and does not require Xcode. If
+the selected CLT omits the SwiftUI macro plugin required by its newest SDK, the
+script uses the compatible macOS 26 SDK retained in the same CLT installation.
 
 Some tests only run when asked, because they touch something shared and real:
 
 ```sh
-TERMTHER_SSH_HOST=... TERMTHER_SSH_USER=... TERMTHER_SSH_KEY=... swift test
-TERMTHER_EC_GATEWAY=host:443 TERMTHER_EC_USER=... swift test --filter liveProbe
-TERMTHER_KEYCHAIN=1 swift test --filter QuickUnlock
+TERMTHER_SSH_HOST=... TERMTHER_SSH_USER=... TERMTHER_SSH_KEY=... ./Scripts/swift-local.sh test
+TERMTHER_EC_GATEWAY=host:443 TERMTHER_EC_USER=... ./Scripts/swift-local.sh test --filter liveProbe
+TERMTHER_KEYCHAIN=1 ./Scripts/swift-local.sh test --filter QuickUnlock
 ```
 
 A test that reaches the login keychain, a real server or a real gateway must

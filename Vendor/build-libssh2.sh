@@ -65,5 +65,6 @@ MM
 
 echo "--- packaging xcframework"
 ./make-xcframework.sh libssh2.xcframework "$WORK/libssh2-combined.a" "$WORK/Headers"
+./namespace-xcframework-headers.sh libssh2.xcframework CSSH2
 
 echo "built Vendor/libssh2.xcframework ($(du -sh libssh2.xcframework | cut -f1))"
