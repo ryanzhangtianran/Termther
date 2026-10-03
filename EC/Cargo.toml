@@ -1,0 +1,27 @@
+[package]
+name = "termther-ec"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+description = "EasyConnect client that serves the tunnel as a SOCKS5 proxy"
+
+# A static library for the macOS app (Vendor/build-ec.sh), and the rlib the
+# termther-ec binary is built from.
+[lib]
+name = "termther_ec"
+crate-type = ["staticlib", "rlib"]
+
+# Pure Rust throughout, so a Linux build needs no system OpenSSL. RC4 is
+# hand-written in tls.rs: no maintained crate offers it with TLS framing.
+[dependencies]
+aes = "0.8"
+hmac = "0.12"
+md-5 = "0.10"
+rand = "0.8"
+rsa = "0.9"
+sha1 = "0.10"
+sha2 = "0.10"
+socket2 = { version = "0.5", features = ["all"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
